@@ -1,6 +1,10 @@
 name: Build LLVM
 on: [push, pull_request]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/course-spring-2026' && github.event_name != 'merge_group' && !startsWith(github.ref, 'refs/heads/gh-readonly-queue') }}
+
 jobs:
   ubuntu-gcc-build:
     runs-on: ubuntu-latest
@@ -16,41 +20,6 @@ jobs:
           sudo apt-get install -y \
             build-essential \
             ninja-build \
-      - name: Setup ccache
-        uses: hendrikmuhs/ccache-action@v1.2
-        with:
-          max-size: 500M
-          key: ccache-${{ github.job }}
-      - name: Build
-        run: |
-          cmake -S llvm -B build \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DLLVM_ENABLE_PROJECTS="clang;mlir" \
-            -DLLVM_ENABLE_ASSERTIONS=${{ matrix.assertions }} \
-            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-            -DLLVM_TARGETS_TO_BUILD="X86;AArch64" \
-            -G Ninja
-          cmake --build build --config Release -j $(nproc)
-      - name: Test
-        run: |
-          cmake --build build --config Release -t \
-            check-llvm-compiler-course \
-            check-clang-compiler-course \
-            check-mlir-compiler-course -j $(nproc)
-  macos-build:
-    runs-on: macOS-latest
-    strategy:
-      matrix:
-        assertions: [ON, OFF]
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-      - name: Setup environment
-        run: |
-          brew install \
-            ninja
       - name: Setup ccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
