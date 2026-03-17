@@ -1,9 +1,9 @@
 #include "clang/AST/ASTConsumer.h"
 #include "clang/AST/RecursiveASTVisitor.h"
 #include "clang/AST/Type.h"
+#include "clang/Basic/SourceManager.h"
 #include "clang/Frontend/CompilerInstance.h"
 #include "clang/Frontend/FrontendPluginRegistry.h"
-#include "clang/Basic/SourceManager.h"
 #include "llvm/Support/raw_ostream.h"
 
 namespace {
@@ -18,12 +18,11 @@ public:
   }
 };
 
-class NoexceptVisitor final :
-    public clang::RecursiveASTVisitor<NoexceptVisitor> {
+class NoexceptVisitor final
+    : public clang::RecursiveASTVisitor<NoexceptVisitor> {
 
 public:
-  explicit NoexceptVisitor(clang::ASTContext *context)
-      : context(context) {}
+  explicit NoexceptVisitor(clang::ASTContext *context) : context(context) {}
 
   bool VisitFunctionDecl(clang::FunctionDecl *func) {
 
@@ -52,8 +51,7 @@ public:
     if (func->isTemplated())
       return true;
 
-    const auto *type =
-        func->getType()->getAs<clang::FunctionProtoType>();
+    const auto *type = func->getType()->getAs<clang::FunctionProtoType>();
 
     if (!type)
       return true;
@@ -68,8 +66,7 @@ public:
       return true;
 
     llvm::errs() << "Function can be marked noexcept: "
-                 << func->getQualifiedNameAsString()
-                 << " at ";
+                 << func->getQualifiedNameAsString() << " at ";
 
     func->getLocation().print(llvm::errs(), SM);
     llvm::errs() << "\n";
@@ -83,8 +80,7 @@ private:
 
 class NoexceptConsumer final : public clang::ASTConsumer {
 public:
-  explicit NoexceptConsumer(clang::ASTContext *context)
-      : visitor(context) {}
+  explicit NoexceptConsumer(clang::ASTContext *context) : visitor(context) {}
 
   void HandleTranslationUnit(clang::ASTContext &context) override {
     visitor.TraverseDecl(context.getTranslationUnitDecl());
@@ -97,8 +93,7 @@ private:
 class NoexceptAction final : public clang::PluginASTAction {
 public:
   std::unique_ptr<clang::ASTConsumer>
-  CreateASTConsumer(clang::CompilerInstance &CI,
-                    llvm::StringRef) override {
+  CreateASTConsumer(clang::CompilerInstance &CI, llvm::StringRef) override {
 
     return std::make_unique<NoexceptConsumer>(&CI.getASTContext());
   }
@@ -109,7 +104,7 @@ public:
   }
 };
 
-} 
+} // namespace
 
 static clang::FrontendPluginRegistry::Add<NoexceptAction>
     X("noexcept_plugin", "Find functions that can be marked noexcept");
