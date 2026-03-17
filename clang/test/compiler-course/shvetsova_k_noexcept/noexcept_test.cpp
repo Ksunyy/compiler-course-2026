@@ -1,4 +1,4 @@
-// RUN: %clang_cc1 -load %llvmshlibdir/shvetsova_k_noexecept_ClangAST%pluginext -plugin noexcept_plugin -fsyntax-only -fcxx-exceptions %s 2>&1 | FileCheck %s
+// RUN: %clang_cc1 -load %llvmshlibdir/shvetsova_k_noexcept_func_ClangAST%pluginext -plugin noexcept_plugin -fsyntax-only -fcxx-exceptions %s 2>&1 | FileCheck %s
 
 
 // CHECK: Function can be marked noexcept: simpleSafeFunction
