@@ -19,7 +19,7 @@ int complexSafeFunction() {
     int a = 10;
     int b = 20;
     return a + b;
-}
+} 
 
 int safeFunctionWithLoops() {
     int sum = 0;
@@ -58,6 +58,7 @@ namespace Outer {
 }
 
 int functionA() { return 1; }
+
 int functionB() { return functionA() + 1; }
 
 int main() {
@@ -65,10 +66,6 @@ int main() {
     functionWithConditions(10);
     return 0;
 }
-
-// ============================================
-// Тесты на функции, которые НЕЛЬЗЯ пометить noexcept
-// ============================================
 
 // CHECK-NOT: Function can be marked noexcept: throwingFunction
 int throwingFunction() {
