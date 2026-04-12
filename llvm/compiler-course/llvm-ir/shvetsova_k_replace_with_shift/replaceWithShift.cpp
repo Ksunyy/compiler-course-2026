@@ -30,13 +30,40 @@ void replaceWithRightShift(llvm::BinaryOperator *oldInst,
                            llvm::ConstantInt *powerOf2Const,
                            llvm::IRBuilder<> &builder, bool isArithmetic) {
   uint64_t shiftAmt = powerOf2Const->getValue().logBase2();
-  llvm::Value *shiftConst =
-      builder.getIntN(powerOf2Const->getBitWidth(), shiftAmt);
+  llvm::Type *ty = valToShift->getType();
+  llvm::Value *shiftConst = builder.getIntN(ty->getIntegerBitWidth(), shiftAmt);
 
   llvm::Value *newShift = nullptr;
+
   if (isArithmetic) {
-    newShift = builder.CreateAShr(valToShift, shiftConst, "arithShiftRight");
+    // Если деление точное, нам не нужны лишние вычисления
+    if (oldInst->isExact()) {
+      newShift = builder.CreateAShr(valToShift, shiftConst, "arithShiftRight");
+    } else {
+      // Генерируем смещение для отрицательных чисел во время выполнения
+      // bias = (1 << shiftAmt) - 1
+      uint64_t biasVal = (1ULL << shiftAmt) - 1;
+      llvm::Value *biasConst =
+          builder.getIntN(ty->getIntegerBitWidth(), biasVal);
+      llvm::Value *zeroConst = builder.getIntN(ty->getIntegerBitWidth(), 0);
+
+      // Проверяем: valToShift < 0 ?
+      llvm::Value *isNegative =
+          builder.CreateICmpSLT(valToShift, zeroConst, "isNeg");
+
+      // Выбираем: если < 0, то bias, иначе 0
+      llvm::Value *bias =
+          builder.CreateSelect(isNegative, biasConst, zeroConst, "bias");
+
+      // valToShift + bias
+      llvm::Value *adjustedVal =
+          builder.CreateAdd(valToShift, bias, "adjustedVal");
+
+      // Наконец, делаем сдвиг
+      newShift = builder.CreateAShr(adjustedVal, shiftConst, "arithShiftRight");
+    }
   } else {
+    // Беззнаковый сдвиг (UDiv)
     newShift = builder.CreateLShr(valToShift, shiftConst, "logicalShiftRight");
   }
 
