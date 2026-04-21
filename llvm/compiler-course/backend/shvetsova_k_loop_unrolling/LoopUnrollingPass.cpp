@@ -126,9 +126,9 @@ private:
     return std::nullopt;
   }
 
-  static std::optional<int64_t>
-  findUniqueSelfUpdate(const MachineFunction &MF, const MachineLoop *Loop,
-                       Register Reg) {
+  static std::optional<int64_t> findUniqueSelfUpdate(const MachineFunction &MF,
+                                                     const MachineLoop *Loop,
+                                                     Register Reg) {
     std::optional<int64_t> Step;
 
     for (const MachineBasicBlock &MBB : MF) {
@@ -240,9 +240,10 @@ private:
     return (Numerator + Denominator - 1) / Denominator;
   }
 
-  static std::optional<uint64_t>
-  computeTripCount(int64_t Init, int64_t Bound, int64_t Step,
-                   X86::CondCode ContinueCC, bool IsPostTested) {
+  static std::optional<uint64_t> computeTripCount(int64_t Init, int64_t Bound,
+                                                  int64_t Step,
+                                                  X86::CondCode ContinueCC,
+                                                  bool IsPostTested) {
     if (Step == 0)
       return std::nullopt;
 
@@ -309,14 +310,13 @@ private:
     if (!ConstBackedgeTakenCount)
       return std::nullopt;
 
-    uint64_t TripCount =
-        ConstBackedgeTakenCount->getAPInt().getZExtValue() + 1;
+    uint64_t TripCount = ConstBackedgeTakenCount->getAPInt().getZExtValue() + 1;
     return normalizeTripCount(TripCount);
   }
 
-  std::optional<unsigned>
-  getTripCountFromMachine(MachineFunction &MF, MachineLoopInfo &MLI,
-                          MachineLoop *MLoop) {
+  std::optional<unsigned> getTripCountFromMachine(MachineFunction &MF,
+                                                  MachineLoopInfo &MLI,
+                                                  MachineLoop *MLoop) {
     MachineBasicBlock *ControlBlock = findConditionBlock(MLoop);
     if (!ControlBlock)
       return std::nullopt;
@@ -350,8 +350,9 @@ private:
       if (EffectiveCC == X86::COND_INVALID)
         return std::nullopt;
 
-      bool IsPostTested = ControlBlock != MLoop->getHeader() ||
-                          hasUpdateBeforeCompare(*ControlBlock, *Compare, IVReg);
+      bool IsPostTested =
+          ControlBlock != MLoop->getHeader() ||
+          hasUpdateBeforeCompare(*ControlBlock, *Compare, IVReg);
       auto TripCount =
           computeTripCount(*Init, Bound, Step, EffectiveCC, IsPostTested);
       if (!TripCount)
@@ -408,9 +409,8 @@ private:
     }
   }
 
-  std::optional<unsigned> getUnrollCount(MachineFunction &MF,
-                                         MachineLoopInfo &MLI,
-                                         MachineLoop *Loop) {
+  std::optional<unsigned>
+  getUnrollCount(MachineFunction &MF, MachineLoopInfo &MLI, MachineLoop *Loop) {
     if (auto TripCount = getTripCountFromIR(Loop))
       return *TripCount;
     if (auto TripCount = getTripCountFromMachine(MF, MLI, Loop))
